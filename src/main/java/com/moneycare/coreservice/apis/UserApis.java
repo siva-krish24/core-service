@@ -10,7 +10,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 
 @RestController
@@ -76,11 +78,16 @@ public class UserApis {
         }
         ApprovalRequest approvalRequest = new ApprovalRequest(sUsr, tUser);
         if(sUsr.getUserName().equalsIgnoreCase("admin")){
-            if(loginCheck(sUsr,  userCredentials)){
-                if(userId.id1!=null )
-                    defaultLoginUsers.put(userId.id1,"mny123");
-                if(userId.id2!=null)
-                    defaultLoginUsers.put(userId.id1,"mny123");
+            if(loginCheck(sUsr,  userCredentials) || ValidateLogin(sUsr.getUserName(),userCredentials)){  //previously login check....changed to Validate Login
+                if(userId.id1!=null ) {
+                    defaultLoginUsers.put(userId.id1, "mny123");
+                   users.put(userId.id1, new User(tUser));
+                }
+                if(userId.id2!=null) {
+                    defaultLoginUsers.put(userId.id1, "mny123");
+                    users.put(userId.id1, new User(tUser));
+                }
+
                 pendingRequests.remove(requestId);
                 return new ResponseEntity<>("Default Login Created", HttpStatus.OK);
             }
@@ -120,12 +127,13 @@ public class UserApis {
            if(users.containsKey(approvalRequest.srcUser.getUserName())){
                String srcUserKey = approvalRequest.srcUser.getUserName();
                users.get(srcUserKey).getTeam().add(tUser);
+               //users.put(uId.id1,new User(tUser));
                users.put(uId.id1,new User(tUser));
                System.out.println("Approved user" + uId.id1);
                pendingRequests.remove(requestId);
            }
         }
-        if(uId.id2!=null){
+        else if(uId.id2!=null){
             defaultLoginUsers.put(uId.id2, "mny123");
             if(users.containsKey(approvalRequest.srcUser.getUserName())){
                 String srcUserKey = approvalRequest.srcUser.getUserName();
@@ -190,6 +198,52 @@ public class UserApis {
         return new ResponseEntity<>(res, HttpStatus.OK);
     }
 
+    @GetMapping("/getuserdetails/{userId}")
+    public @ResponseBody ResponseEntity<BasicUserEntity> getUserDetails(@PathVariable String userId) throws JsonProcessingException{
+        if (!users.containsKey(userId))
+            return new ResponseEntity<>(new BasicUserEntity(),HttpStatus.OK);
+        BasicUserEntity profile = new BasicUserEntity(users.get(userId).getFirstName(),users.get(userId).getLastName(),users.get(userId).getEmail(),users.get(userId).getMobileNo());
+        return new ResponseEntity<>(profile,HttpStatus.OK);
+    }
+
+    @PostMapping("/edituserdetails")
+    public @ResponseBody ResponseEntity<String> updateUserDetails(@RequestBody String reqBody) throws JsonProcessingException{
+
+        AddUserRequest editProfile = mapper.readValue(reqBody,AddUserRequest.class);
+        UserAuthEntity sUser = editProfile.srcUser;
+        String userId = sUser.getUserName();
+        BasicUserEntity profileDetails = editProfile.targetUser;
+        if (!users.containsKey(userId))
+            return new ResponseEntity<>("user not found",HttpStatus.OK);
+        users.get(userId).setFirstName(profileDetails.getFirstName());
+        users.get(userId).setLastName(profileDetails.getLastName());
+        users.get(userId).setEmail(profileDetails.getEmail());
+        users.get(userId).setMobileNo(profileDetails.getMobileNo());
+        return new ResponseEntity<>("edited success",HttpStatus.OK);
+    }
+
+    @PostMapping("/resetpassword")
+    public @ResponseBody ResponseEntity<String> resetPassword(@RequestBody String userCustmer) throws JsonProcessingException{
+
+        UserAuthEntity userAuthEntity = mapper.readValue(userCustmer,UserAuthEntity.class);
+        System.out.println("user: "+userAuthEntity.getUserName()+" pass: "+userAuthEntity.getPassword());
+        if (!users.containsKey(userAuthEntity.getUserName()))
+            return new ResponseEntity<>("ERROR",HttpStatus.OK);
+        if (defaultLoginUsers.containsKey(userAuthEntity.getUserName())) {
+            users.get(userAuthEntity.getUserName()).setPassword(userAuthEntity.getPassword());
+            users.get(userAuthEntity.getUserName()).setTeam(new ArrayList<>());
+            users.get(userAuthEntity.getUserName()).setBankAccounts(new HashMap<>());
+            users.get(userAuthEntity.getUserName()).setEarnings(new ArrayList<>());
+            defaultLoginUsers.remove(userAuthEntity.getUserName());
+            userCredentials.put(userAuthEntity.getUserName(), userAuthEntity.getPassword());
+        }
+        else {
+            users.get(userAuthEntity.getUserName()).setPassword(userAuthEntity.getPassword());
+        }
+
+        return new ResponseEntity<>("success "+users.get(userAuthEntity.getUserName()).getPassword(),HttpStatus.OK);
+    }
+
 //    @PostMapping("/addbankaccount")
 //    @PostMapping("/removebankaccount")
 //    @GetMapping("/getbankaccounts")
@@ -201,6 +255,23 @@ public class UserApis {
 //    @GetMapping("/getmyteam")
 //    @GetMapping("/getuserdetails")
 //    @GetMapping("/getmytotalamount")
+
+
+
+    //displaying all details for postman testing
+
+    @GetMapping("/displayUsers")
+    public @ResponseBody Map<String,User> displayUsers(){
+        return users;
+    }
+    @GetMapping("/displayUserCred")
+    public @ResponseBody Map<String,String> displayUserCred(){
+        return userCredentials;
+    }
+    @GetMapping("/displayDUsers")
+    public @ResponseBody Map<String,String> displayDUsers(){
+        return defaultLoginUsers;
+    }
 
 
 

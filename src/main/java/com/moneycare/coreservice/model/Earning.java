@@ -2,7 +2,7 @@ package com.moneycare.coreservice.model;
 
 import java.util.Date;
 
-public class Earning {
+public class  Earning {
    private int amount;
     private Date day;
     private User fromUser;
