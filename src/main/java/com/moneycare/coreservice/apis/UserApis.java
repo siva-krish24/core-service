@@ -14,6 +14,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.moneycare.coreservice.transactions.Ratings.ratings;
+
 
 @RestController
 public class UserApis {
@@ -242,6 +244,21 @@ public class UserApis {
         }
 
         return new ResponseEntity<>("success "+users.get(userAuthEntity.getUserName()).getPassword(),HttpStatus.OK);
+    }
+
+    @GetMapping("/getuserrating/{userId}")
+    public @ResponseBody ResponseEntity<Rating> getRating(@PathVariable String userId) throws JsonProcessingException{
+        if (!users.containsKey(userId)) return new ResponseEntity<>(new Rating(),HttpStatus.OK);
+        if (!ratings.containsKey(userId)) return new ResponseEntity<>(new Rating(),HttpStatus.OK);
+        else return new ResponseEntity<>(ratings.get(userId),HttpStatus.OK);
+    }
+    @PostMapping("/addrating")
+    public @ResponseBody ResponseEntity<String> addRating(@RequestBody String userRating) throws JsonProcessingException{
+        Rating rating = mapper.readValue(userRating,Rating.class);
+        String userId = rating.getUserId();
+        if (!users.containsKey(userId)) return new ResponseEntity<>("Invalid User",HttpStatus.FORBIDDEN);
+        ratings.put(userId,rating);
+        return new ResponseEntity<>("Ratings Added",HttpStatus.OK);
     }
 
 //    @PostMapping("/addbankaccount")
