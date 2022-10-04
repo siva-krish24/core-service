@@ -42,6 +42,8 @@ public class User {
     }
 
     private List<Earning> earnings;
+
+    private List<Transaction> transactions;
     private int totalEarning;
     private String email;
     private String mobileNo;
@@ -60,6 +62,7 @@ public class User {
         this.bankAccounts = new HashMap<>();
         this.earnings = new ArrayList<>();
         this.team = new ArrayList<>();
+        this.transactions = new ArrayList<>();
     }
 
     public String getId() {
@@ -132,5 +135,13 @@ public class User {
 
     public void setMobileNo(String mobileNo) {
         this.mobileNo = mobileNo;
+    }
+
+    public List<Transaction> getTransactions() {
+        return transactions;
+    }
+
+    public void setTransactions(List<Transaction> transactions) {
+        this.transactions = transactions;
     }
 }

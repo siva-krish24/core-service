@@ -14,6 +14,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.moneycare.coreservice.transactions.PendingWithdrawRequests.pendingWithdrawRequests;
 import static com.moneycare.coreservice.transactions.Ratings.ratings;
 
 
@@ -236,8 +237,10 @@ public class UserApis {
             users.get(userAuthEntity.getUserName()).setTeam(new ArrayList<>());
             users.get(userAuthEntity.getUserName()).setBankAccounts(new HashMap<>());
             users.get(userAuthEntity.getUserName()).setEarnings(new ArrayList<>());
+            users.get(userAuthEntity.getUserName()).setTransactions(new ArrayList<>());
             defaultLoginUsers.remove(userAuthEntity.getUserName());
             userCredentials.put(userAuthEntity.getUserName(), userAuthEntity.getPassword());
+
         }
         else {
             users.get(userAuthEntity.getUserName()).setPassword(userAuthEntity.getPassword());
@@ -261,6 +264,59 @@ public class UserApis {
         return new ResponseEntity<>("Ratings Added",HttpStatus.OK);
     }
 
+
+    //addWithdraw Request
+
+    @PostMapping("/addwithdrawrequest")
+    public @ResponseBody ResponseEntity<String> addWithdrawRequest(@RequestBody String addWithdrawRequest) throws JsonProcessingException{
+        AddWithdrawRequest adWithdrawRequest = mapper.readValue(addWithdrawRequest, AddWithdrawRequest.class);
+        UserAuthEntity sUsr = adWithdrawRequest.srcUser;
+        String sUserId = sUsr.getUserName();
+        Transaction userTransaction = adWithdrawRequest.userTransaction;
+
+        if (!users.containsKey(sUserId)){
+            return new ResponseEntity<>("Invalid User",HttpStatus.OK);
+        }
+        else{
+            ApprovalWithdrawRequest approvalWithdrawRequest = new ApprovalWithdrawRequest(sUsr,userTransaction);
+            pendingWithdrawRequests.put(sUserId,approvalWithdrawRequest);
+            return new ResponseEntity<>("request added",HttpStatus.OK);
+        }
+    }
+
+    //pending withdraw requests
+    @GetMapping("/getwithdrawrequests/{userId}")
+    public @ResponseBody ResponseEntity<List<ApprovalWithdrawRequest>> getWithdrawRequests(@PathVariable String userId) throws JsonProcessingException {
+        if(!userId.equalsIgnoreCase("admin"))  return new ResponseEntity<>(new ArrayList<>(), HttpStatus.OK);
+        List<ApprovalWithdrawRequest> pendingRequestsResult =  new ArrayList<>();
+        pendingWithdrawRequests.entrySet().forEach(pr -> {pendingRequestsResult.add(pr.getValue());});
+        return new ResponseEntity<>(pendingRequestsResult, HttpStatus.OK);
+    }
+
+    //approve withdraw request
+    @PostMapping("/approvalwithdrawrequest")
+    public @ResponseBody ResponseEntity<String> approveWithdrawRequest(@RequestBody String approveWithdrawReqStr) throws JsonProcessingException{
+        ApprovalWithdrawRequest approvalWithdrawRequest = mapper.readValue(approveWithdrawReqStr,ApprovalWithdrawRequest.class);
+        UserAuthEntity sUser = approvalWithdrawRequest.srcUser;
+        Transaction userTransaction = approvalWithdrawRequest.userTransaction;
+        String sUserId = sUser.getUserName();
+        if (!(users.containsKey(sUserId) || sUserId.equals("admin"))) return new ResponseEntity<>("Invalid user",HttpStatus.OK);
+        /*if (users.get(sUserId).getTotalEarning() < Integer.parseInt(userTransaction.getTrnAmount()))
+            return new ResponseEntity<>("Insuficient",HttpStatus.OK);*/
+        else{
+            //users.get(sUserId).setTotalEarning(users.get(sUserId).getTotalEarning() - Integer.parseInt(userTransaction.getTrnAmount()));
+            users.get(sUserId).getTransactions().add(userTransaction);
+            pendingWithdrawRequests.remove(userTransaction);
+            return new ResponseEntity<>("Success",HttpStatus.OK);
+        }
+    }
+
+    @GetMapping("/usertransactions/{userId}")
+    public @ResponseBody ResponseEntity<List<Transaction>> getUserTransactions(@PathVariable String userId) throws JsonProcessingException{
+        if (!users.containsKey(userId)) return new ResponseEntity<>(new ArrayList<>(),HttpStatus.OK);
+        else return new ResponseEntity<>(users.get(userId).getTransactions(),HttpStatus.OK);
+    }
+
 //    @PostMapping("/addbankaccount")
 //    @PostMapping("/removebankaccount")
 //    @GetMapping("/getbankaccounts")
@@ -276,6 +332,7 @@ public class UserApis {
 
 
     //displaying all details for postman testing
+/*
 
     @GetMapping("/displayUsers")
     public @ResponseBody Map<String,User> displayUsers(){
@@ -289,6 +346,7 @@ public class UserApis {
     public @ResponseBody Map<String,String> displayDUsers(){
         return defaultLoginUsers;
     }
+*/
 
 
 
