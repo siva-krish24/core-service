@@ -277,6 +277,7 @@ public class UserApis {
         if (!users.containsKey(sUserId)){
             return new ResponseEntity<>("Invalid User",HttpStatus.OK);
         }
+        else if (pendingWithdrawRequests.containsKey(sUserId)) return new ResponseEntity<>("request limit exceeded",HttpStatus.OK);
         else{
             ApprovalWithdrawRequest approvalWithdrawRequest = new ApprovalWithdrawRequest(sUsr,userTransaction);
             pendingWithdrawRequests.put(sUserId,approvalWithdrawRequest);
@@ -306,7 +307,7 @@ public class UserApis {
         else{
             //users.get(sUserId).setTotalEarning(users.get(sUserId).getTotalEarning() - Integer.parseInt(userTransaction.getTrnAmount()));
             users.get(sUserId).getTransactions().add(userTransaction);
-            pendingWithdrawRequests.remove(userTransaction);
+            pendingWithdrawRequests.remove(sUserId);
             return new ResponseEntity<>("Success",HttpStatus.OK);
         }
     }
@@ -332,7 +333,6 @@ public class UserApis {
 
 
     //displaying all details for postman testing
-/*
 
     @GetMapping("/displayUsers")
     public @ResponseBody Map<String,User> displayUsers(){
@@ -346,7 +346,12 @@ public class UserApis {
     public @ResponseBody Map<String,String> displayDUsers(){
         return defaultLoginUsers;
     }
-*/
+
+    @GetMapping("/resettransactions/{userId}")
+    public @ResponseBody String resetTransactions(@PathVariable String userId){
+        users.get(userId).getTransactions().clear();
+        return "Done";
+    }
 
 
 
