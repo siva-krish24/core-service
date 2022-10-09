@@ -9,12 +9,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.time.LocalDateTime;
+import java.util.*;
 
-import static com.moneycare.coreservice.transactions.PendingWithdrawRequests.pendingWithdrawRequests;
 import static com.moneycare.coreservice.transactions.Ratings.ratings;
 
 
@@ -33,6 +30,9 @@ public class UserApis {
 
     @Autowired
     Users users = Users.getUsersInstance();
+
+    @Autowired
+    PendingWithdrawRequests pendingWithdrawRequests = PendingWithdrawRequests.getPendingWithdrawRequestsInstance();
 
     @PostMapping("/makelogin")
     public @ResponseBody ResponseEntity<LoginType> makeLogin(@RequestBody String userCustomer) throws JsonProcessingException {
@@ -121,15 +121,19 @@ public class UserApis {
     @PostMapping("/approveuser")
     public @ResponseBody ResponseEntity<String> approveUser(@RequestBody String approvalRequestStr) throws JsonProcessingException{
         ApprovalRequest approvalRequest = mapper.readValue(approvalRequestStr, ApprovalRequest.class);
+        int amount = approvalRequest.amount;
         BasicUserEntity tUser = approvalRequest.targetUser;
         UserId uId  = prepareUserId(tUser);
         String requestId = prepareRequestId(tUser);
         System.out.println("Approval request" + approvalRequestStr);
+        Earning curEarning = new Earning(amount, LocalDateTime.now(), tUser);
+
         if(uId.id1!=null) {
             defaultLoginUsers.put(uId.id1, "mny123");
            if(users.containsKey(approvalRequest.srcUser.getUserName())){
                String srcUserKey = approvalRequest.srcUser.getUserName();
                users.get(srcUserKey).getTeam().add(tUser);
+               users.get(srcUserKey).getEarnings().add(curEarning);
                //users.put(uId.id1,new User(tUser));
                users.put(uId.id1,new User(tUser));
                System.out.println("Approved user" + uId.id1);
@@ -301,11 +305,12 @@ public class UserApis {
         UserAuthEntity sUser = approvalWithdrawRequest.srcUser;
         Transaction userTransaction = approvalWithdrawRequest.userTransaction;
         String sUserId = sUser.getUserName();
-        if (!(users.containsKey(sUserId) || sUserId.equals("admin"))) return new ResponseEntity<>("Invalid user",HttpStatus.OK);
-        /*if (users.get(sUserId).getTotalEarning() < Integer.parseInt(userTransaction.getTrnAmount()))
-            return new ResponseEntity<>("Insuficient",HttpStatus.OK);*/
+        if (!users.containsKey(sUserId))
+            return new ResponseEntity<>("Invalid user",HttpStatus.FORBIDDEN);
+        if (users.get(sUserId).getTotalEarning() < Integer.parseInt(userTransaction.getTrnAmount()))
+            return new ResponseEntity<>("Insuficient",HttpStatus.OK);
         else{
-            //users.get(sUserId).setTotalEarning(users.get(sUserId).getTotalEarning() - Integer.parseInt(userTransaction.getTrnAmount()));
+            users.get(sUserId).setTotalEarning(users.get(sUserId).getTotalEarning() - Integer.parseInt(userTransaction.getTrnAmount()));
             users.get(sUserId).getTransactions().add(userTransaction);
             pendingWithdrawRequests.remove(sUserId);
             return new ResponseEntity<>("Success",HttpStatus.OK);

@@ -2,12 +2,14 @@ package com.moneycare.coreservice.transactions;
 
 import com.moneycare.coreservice.model.ApprovalRequest;
 import com.moneycare.coreservice.model.ApprovalWithdrawRequest;
+import org.springframework.stereotype.Component;
 
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
+@Component
 public class PendingWithdrawRequests implements CommonStore{
 
     public static Map<String, ApprovalWithdrawRequest> pendingWithdrawRequests = new HashMap<>();

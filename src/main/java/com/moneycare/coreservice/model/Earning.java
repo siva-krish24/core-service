@@ -1,16 +1,20 @@
 package com.moneycare.coreservice.model;
 
+import java.time.LocalDateTime;
 import java.util.Date;
 
 public class  Earning {
    private int amount;
-    private Date day;
-    private User fromUser;
+    private LocalDateTime day;
+    private BasicUserEntity fromUser;
 
-    public Earning(int amount, Date day, User fromUser) {
+    public Earning(int amount, LocalDateTime day, BasicUserEntity fromUser) {
         this.amount = amount;
         this.day = day;
         this.fromUser = fromUser;
+    }
+
+    public Earning() {
     }
 
     public int getAmount() {
@@ -21,19 +25,19 @@ public class  Earning {
         this.amount = amount;
     }
 
-    public Date getDay() {
+    public LocalDateTime getDay() {
         return day;
     }
 
-    public void setDay(Date day) {
+    public void setDay(LocalDateTime day) {
         this.day = day;
     }
 
-    public User getFromUser() {
+    public BasicUserEntity getFromUser() {
         return fromUser;
     }
 
-    public void setFromUser(User fromUser) {
+    public void setFromUser(BasicUserEntity fromUser) {
         this.fromUser = fromUser;
     }
 }
