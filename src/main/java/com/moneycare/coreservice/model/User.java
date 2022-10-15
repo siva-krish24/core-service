@@ -45,6 +45,8 @@ public class User {
 
     private List<Transaction> transactions;
     private int totalEarning;
+
+    private int availBalance;
     private String email;
     private String mobileNo;
 
@@ -111,6 +113,14 @@ public class User {
 
     public void setEarnings(List<Earning> earnings) {
         this.earnings = earnings;
+    }
+
+    public int getAvailBalance() {
+        return availBalance;
+    }
+
+    public void setAvailBalance(int availBalance) {
+        this.availBalance = availBalance;
     }
 
     public int getTotalEarning() {
