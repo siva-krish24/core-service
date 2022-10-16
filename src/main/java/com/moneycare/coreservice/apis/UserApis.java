@@ -148,6 +148,8 @@ public class UserApis {
                String srcUserKey = approvalRequest.srcUser.getUserName();
                users.get(srcUserKey).getTeam().add(tUser);
                users.get(srcUserKey).getEarnings().add(curEarning);
+               users.get(srcUserKey).setTotalEarning(users.get(srcUserKey).getTotalEarning()+curEarning.getAmount());
+               users.get(srcUserKey).setAvailBalance(users.get(srcUserKey).getAvailBalance()+curEarning.getAmount());
                //users.put(uId.id1,new User(tUser));
                users.put(uId.id1,new User(tUser));
                System.out.println("Approved user" + uId.id1);
@@ -209,14 +211,19 @@ public class UserApis {
          return new ResponseEntity<>(accounts,HttpStatus.OK);
     }
     @GetMapping("/getmytotalamount/{userId}")
-    public @ResponseBody ResponseEntity<Integer> getTotalAmount(@PathVariable String userId) throws JsonProcessingException{
+    public @ResponseBody ResponseEntity<List<Integer>> getTotalAmount(@PathVariable String userId) throws JsonProcessingException{
         if(!users.containsKey(userId))
-            return new ResponseEntity<>(0,HttpStatus.OK);
+            return new ResponseEntity<>(new ArrayList<>(),HttpStatus.OK);
         int res = 0;
         for(Earning earning : users.get(userId).getEarnings()){
             res += earning.getAmount();
         }
-        return new ResponseEntity<>(res, HttpStatus.OK);
+        //users.get(userId).setTotalEarning(res);
+        //users.get(userId).setAvailBalance(res);
+        List<Integer> earnings = new ArrayList<>();
+        earnings.add(users.get(userId).getTotalEarning());
+        earnings.add(users.get(userId).getAvailBalance());
+        return new ResponseEntity<>(earnings, HttpStatus.OK);
     }
 
     @GetMapping("/getuserdetails/{userId}")
@@ -321,10 +328,13 @@ public class UserApis {
         String sUserId = sUser.getUserName();
         if (!users.containsKey(sUserId))
             return new ResponseEntity<>("Invalid user",HttpStatus.FORBIDDEN);
-        if (users.get(sUserId).getTotalEarning() < Integer.parseInt(userTransaction.getTrnAmount()))
-            return new ResponseEntity<>("Insuficient",HttpStatus.OK);
+        if (users.get(sUserId).getAvailBalance() < Integer.parseInt(userTransaction.getTrnAmount())) {
+            users.get(sUserId).getTransactions().add(userTransaction);
+            pendingWithdrawRequests.remove(sUserId);
+            return new ResponseEntity<>("Insuficient", HttpStatus.OK);
+        }
         else{
-            users.get(sUserId).setTotalEarning(users.get(sUserId).getTotalEarning() - Integer.parseInt(userTransaction.getTrnAmount()));
+            users.get(sUserId).setAvailBalance(users.get(sUserId).getAvailBalance() - Integer.parseInt(userTransaction.getTrnAmount()));
             users.get(sUserId).getTransactions().add(userTransaction);
             pendingWithdrawRequests.remove(sUserId);
             return new ResponseEntity<>("Success",HttpStatus.OK);
@@ -335,6 +345,26 @@ public class UserApis {
     public @ResponseBody ResponseEntity<List<Transaction>> getUserTransactions(@PathVariable String userId) throws JsonProcessingException{
         if (!users.containsKey(userId)) return new ResponseEntity<>(new ArrayList<>(),HttpStatus.OK);
         else return new ResponseEntity<>(users.get(userId).getTransactions(),HttpStatus.OK);
+    }
+
+    @GetMapping("/displayallusers/{userId}")
+    public @ResponseBody ResponseEntity<List<UserItem>> getAllUserDetails(@PathVariable String userId)throws JsonProcessingException{
+        if (!userId.equalsIgnoreCase("admin")) return new ResponseEntity<>(new ArrayList<>(),HttpStatus.FORBIDDEN);
+        List<UserItem> userItemList = new ArrayList<>();
+        users.entrySet().forEach(user -> {
+            userItemList.add(new UserItem(user.getValue().getMobileNo(),
+                    user.getValue().getEmail(),
+                    user.getValue().getAvailBalance(),
+                    user.getValue().getTotalEarning(),
+                    user.getValue().getTeam(),
+                    user.getValue().getBankAccounts()));
+        });
+        return new ResponseEntity<>(userItemList,HttpStatus.OK);
+    }
+    @GetMapping("/checkuser/{userId}")
+    public @ResponseBody ResponseEntity<String> checkUser(@PathVariable String userId) throws JsonProcessingException{
+        if (!users.containsKey(userId)) return new ResponseEntity<>("NotFound",HttpStatus.OK);
+        return new ResponseEntity<>("Found",HttpStatus.OK);
     }
 
 //    @PostMapping("/addbankaccount")
@@ -353,7 +383,7 @@ public class UserApis {
 
     //displaying all details for postman testing
 
-    @GetMapping("/displayUsers")
+  /*  @GetMapping("/displayUsers")
     public @ResponseBody Map<String,User> displayUsers(){
         return users;
     }
@@ -364,13 +394,14 @@ public class UserApis {
     @GetMapping("/displayDUsers")
     public @ResponseBody Map<String,String> displayDUsers(){
         return defaultLoginUsers;
-    }
+    }*/
 
-    @GetMapping("/resettransactions/{userId}")
+   /* @GetMapping("/resettransactions/{userId}")
     public @ResponseBody String resetTransactions(@PathVariable String userId){
         users.get(userId).getTransactions().clear();
         return "Done";
     }
+*/
 
 
 
