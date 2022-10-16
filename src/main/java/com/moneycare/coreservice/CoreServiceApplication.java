@@ -1,21 +1,41 @@
 package com.moneycare.coreservice;
 
 import com.moneycare.coreservice.apis.UserApis;
+import com.moneycare.coreservice.datamanagement.*;
 import com.moneycare.coreservice.model.ApprovalRequest;
 import com.moneycare.coreservice.model.BasicUserEntity;
 import com.moneycare.coreservice.model.User;
 import com.moneycare.coreservice.model.UserAuthEntity;
-import com.moneycare.coreservice.transactions.DefaultLoginUsers;
-import com.moneycare.coreservice.transactions.PendingRequests;
-import com.moneycare.coreservice.transactions.UserCredentials;
-import com.moneycare.coreservice.transactions.Users;
+import com.moneycare.coreservice.transactions.*;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.scheduling.annotation.Scheduled;
 
+
 @SpringBootApplication(scanBasePackages={"com.moneycare.coreservice"})
+
 public class CoreServiceApplication implements CommandLineRunner {
+	@Autowired
+	DefaultLoginUserRepo defaultLoginUserRepo;
+	@Autowired
+	PendingRequestRepo pendingRequestRepo;
+
+	@Autowired
+	PendingWithdrawlRequestRepo pendingWithdrawlRequestRepo;
+	@Autowired
+	RatingRepo ratingRepo;
+	@Autowired
+	UserCredentialsRepo userCredentialsRepo;
+	@Autowired
+	UsersRepo usersRepo;
+
+
+	DefaultLoginUsers defaultLoginUsers = DefaultLoginUsers.getDefaultLoginUsersInstance();
+	PendingRequests pendingRequests = PendingRequests.getPendingRequestsInstance();
+	UserCredentials userCredentials = UserCredentials.getUserCredentialsInstance();
+	Users users = Users.getUsersInstance();
 
 	public static void main(String[] args) {
 		SpringApplication.run(CoreServiceApplication.class, args);
@@ -31,16 +51,22 @@ public class CoreServiceApplication implements CommandLineRunner {
 		}
 	}
 
+	private void initiliseFromDataStore(){
+
+		defaultLoginUserRepo.findAll().stream().forEach(val -> defaultLoginUsers.put(val.getKey(),val.getValue()));
+		pendingRequestRepo.findAll().stream().forEach(val -> pendingRequests.put(val.getKey(), val.getValue()));
+		ratingRepo.findAll().stream().forEach(val -> Ratings.ratings.put(val.getKey(), val.getValue()));
+		userCredentialsRepo.findAll().forEach(val -> userCredentials.put(val.getKey(), val.getValue()));
+		usersRepo.findAll().forEach(val -> users.put(val.getKey(), val.getValue()));
+	}
 	private void initiliseLocalCommonStore() {
-		DefaultLoginUsers defaultLoginUsers = DefaultLoginUsers.getDefaultLoginUsersInstance();
-		PendingRequests pendingRequests = PendingRequests.getPendingRequestsInstance();
-		UserCredentials userCredentials = UserCredentials.getUserCredentialsInstance();
-		Users users = Users.getUsersInstance();
+
 
 		users.put("user1", new User("fn1", "ln1","ss@moneycare.com","user1"));
 		defaultLoginUsers.put("default1", "mny123");
 		defaultLoginUsers.put("default2", "mny123");
 		defaultLoginUsers.put("default3", "mny123");
+
 		UserAuthEntity u1 = new UserAuthEntity("user1","pwd1");
 		UserAuthEntity u2 = new UserAuthEntity("user2","pwd2");
 		UserAuthEntity u3 = new UserAuthEntity("user3","pwd3");

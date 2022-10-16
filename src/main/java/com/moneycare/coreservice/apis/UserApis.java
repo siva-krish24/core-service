@@ -2,8 +2,10 @@ package com.moneycare.coreservice.apis;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.moneycare.coreservice.datamanagement.*;
 import com.moneycare.coreservice.model.*;
 import com.moneycare.coreservice.transactions.*;
+import javafx.util.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -19,15 +21,27 @@ import static com.moneycare.coreservice.transactions.Ratings.ratings;
 public class UserApis {
 
 
+    @Autowired
+    DefaultLoginUserRepo defaultLoginUserRepo;
+    @Autowired
+    PendingRequestRepo pendingRequestRepo;
+
+    @Autowired
+    PendingWithdrawlRequestRepo pendingWithdrawlRequestRepo;
+    @Autowired
+    RatingRepo ratingRepo;
+    @Autowired
+    UserCredentialsRepo userCredentialsRepo;
+    @Autowired
+    UsersRepo usersRepo;
+
     ObjectMapper mapper = new ObjectMapper();
     @Autowired
     DefaultLoginUsers defaultLoginUsers = DefaultLoginUsers.getDefaultLoginUsersInstance();
     @Autowired
     UserCredentials userCredentials = UserCredentials.getUserCredentialsInstance();
-
     @Autowired
     PendingRequests pendingRequests = PendingRequests.getPendingRequestsInstance();
-
     @Autowired
     Users users = Users.getUsersInstance();
 
