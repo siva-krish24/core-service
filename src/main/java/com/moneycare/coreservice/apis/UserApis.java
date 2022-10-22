@@ -3,9 +3,9 @@ package com.moneycare.coreservice.apis;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.moneycare.coreservice.datamanagement.*;
+import com.moneycare.coreservice.datamanagement.wrapper.*;
 import com.moneycare.coreservice.model.*;
 import com.moneycare.coreservice.transactions.*;
-import javafx.util.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -21,8 +21,9 @@ import static com.moneycare.coreservice.transactions.Ratings.ratings;
 public class UserApis {
 
 
+    public static int TERMAMOUNT = 500;
     @Autowired
-    DefaultLoginUserRepo defaultLoginUserRepo;
+    DefaultLoginUserRepositry defaultLoginUserRepositry;
     @Autowired
     PendingRequestRepo pendingRequestRepo;
 
@@ -98,21 +99,24 @@ public class UserApis {
             if(loginCheck(sUsr,  userCredentials) || ValidateLogin(sUsr.getUserName(),userCredentials)){  //previously login check....changed to Validate Login
                 if(userId.id1!=null ) {
                     defaultLoginUsers.put(userId.id1, "mny123");
+                    defaultLoginUserRepositry.save(new DefaulLoginPair(userId.id1,"mny123"));
                    users.put(userId.id1, new User(tUser));
+                   usersRepo.save(new UsersPair(userId.id1,new User(tUser)));
                 }
                 if(userId.id2!=null) {
                     defaultLoginUsers.put(userId.id1, "mny123");
+                    defaultLoginUserRepositry.save(new DefaulLoginPair(userId.id1,"mny123"));
                     users.put(userId.id1, new User(tUser));
+                    usersRepo.save(new UsersPair(userId.id1,new User(tUser)));
                 }
-
-                pendingRequests.remove(requestId);
-                return new ResponseEntity<>("Default Login Created", HttpStatus.OK);
+                                return new ResponseEntity<>("Default Login Created", HttpStatus.OK);
             }
         }
         else {
             if(loginCheck(sUsr, userCredentials) || ValidateLogin(sUserId, userCredentials)) {
 
                 pendingRequests.put(requestId, approvalRequest);
+                pendingRequestRepo.save(new PendingRequestPair(requestId,approvalRequest));
                 return new ResponseEntity<>("User added Pending for approval", HttpStatus.OK);
             }
         }
@@ -144,26 +148,35 @@ public class UserApis {
 
         if(uId.id1!=null) {
             defaultLoginUsers.put(uId.id1, "mny123");
+            defaultLoginUserRepositry.save(new DefaulLoginPair( uId.id1, "mny123"));
            if(users.containsKey(approvalRequest.srcUser.getUserName())){
                String srcUserKey = approvalRequest.srcUser.getUserName();
                users.get(srcUserKey).getTeam().add(tUser);
                users.get(srcUserKey).getEarnings().add(curEarning);
                users.get(srcUserKey).setTotalEarning(users.get(srcUserKey).getTotalEarning()+curEarning.getAmount());
                users.get(srcUserKey).setAvailBalance(users.get(srcUserKey).getAvailBalance()+curEarning.getAmount());
-               //users.put(uId.id1,new User(tUser));
+               users.get(srcUserKey).setTermAmount(TERMAMOUNT);
+
                users.put(uId.id1,new User(tUser));
+               usersRepo.save(new UsersPair(uId.id1, new User(tUser)));
                System.out.println("Approved user" + uId.id1);
                pendingRequests.remove(requestId);
+               pendingRequestRepo.delete(pendingRequestRepo.findAll().stream().filter(val -> val.getKey().equalsIgnoreCase(requestId)).findFirst().get());
+
            }
         }
         else if(uId.id2!=null){
             defaultLoginUsers.put(uId.id2, "mny123");
+            defaultLoginUserRepositry.save(new DefaulLoginPair( uId.id2, "mny123"));
             if(users.containsKey(approvalRequest.srcUser.getUserName())){
                 String srcUserKey = approvalRequest.srcUser.getUserName();
                 users.get(srcUserKey).getTeam().add(tUser);
                 users.put(uId.id2,new User(tUser));
+                usersRepo.save(new UsersPair(uId.id2,new User(tUser)));
                 System.out.println("Approved user" + uId.id1);
                 pendingRequests.remove(requestId);
+                pendingRequestRepo.delete(pendingRequestRepo.findAll().stream().filter(val -> val.getKey().equalsIgnoreCase(requestId)).findFirst().get());
+
             }
         }
         System.out.println("Approved user" + uId.id1 + " "+ uId.id2);
@@ -258,20 +271,33 @@ public class UserApis {
         if (!users.containsKey(userAuthEntity.getUserName()))
             return new ResponseEntity<>("ERROR",HttpStatus.OK);
         if (defaultLoginUsers.containsKey(userAuthEntity.getUserName())) {
+
+//            User curUser = new User().setUserName(userAuthEntity.getUserName()).setPassword(userAuthEntity.getPassword()).se;
             users.get(userAuthEntity.getUserName()).setPassword(userAuthEntity.getPassword());
             users.get(userAuthEntity.getUserName()).setTeam(new ArrayList<>());
             users.get(userAuthEntity.getUserName()).setBankAccounts(new HashMap<>());
             users.get(userAuthEntity.getUserName()).setEarnings(new ArrayList<>());
             users.get(userAuthEntity.getUserName()).setTransactions(new ArrayList<>());
+            UsersPair curPair = new UsersPair(userAuthEntity.getUserName(),users.get(userAuthEntity.getUserName()));
+            usersRepo.save(curPair);
             defaultLoginUsers.remove(userAuthEntity.getUserName());
+            DefaulLoginPair removedObj = defaultLoginUserRepositry.findAll().stream().filter(val -> val.getKey().equalsIgnoreCase(userAuthEntity.getUserName())).findFirst().get();
+            defaultLoginUserRepositry.delete(removedObj);
+//            defaultLoginUserRepositry.delete(removedObj);
             userCredentials.put(userAuthEntity.getUserName(), userAuthEntity.getPassword());
+            userCredentialsRepo.save(new UserCredentialsPair(userAuthEntity.getUserName(), userAuthEntity.getPassword()));
 
         }
         else {
             users.get(userAuthEntity.getUserName()).setPassword(userAuthEntity.getPassword());
+            UsersPair curUserPair = new UsersPair(userAuthEntity.getUserName(),users.get(userAuthEntity.getUserName()));
+            usersRepo.save(curUserPair);
+            userCredentials.put(userAuthEntity.getUserName(), userAuthEntity.getPassword());
+            userCredentialsRepo.save(new UserCredentialsPair( userAuthEntity.getUserName(), userAuthEntity.getPassword()));
+
         }
 
-        return new ResponseEntity<>("success "+users.get(userAuthEntity.getUserName()).getPassword(),HttpStatus.OK);
+        return new ResponseEntity<>("success " + users.get(userAuthEntity.getUserName()).getPassword(),HttpStatus.OK);
     }
 
     @GetMapping("/getuserrating/{userId}")
@@ -280,12 +306,24 @@ public class UserApis {
         if (!ratings.containsKey(userId)) return new ResponseEntity<>(new Rating(),HttpStatus.OK);
         else return new ResponseEntity<>(ratings.get(userId),HttpStatus.OK);
     }
+    @PostMapping("/updateterm")
+    public @ResponseBody ResponseEntity<String> updateTerm(@RequestBody String term) throws JsonProcessingException{
+        TERMAMOUNT = Integer.parseInt(term);
+        return new ResponseEntity<>("Success",HttpStatus.ACCEPTED);
+    }
+
+    @GetMapping("/getterm/{userId}")
+    public @ResponseBody ResponseEntity<Integer> getTerm(@PathVariable String userId) throws JsonProcessingException{
+        return new ResponseEntity<>(users.get(userId).getTermAmount(),HttpStatus.OK);
+    }
+
     @PostMapping("/addrating")
     public @ResponseBody ResponseEntity<String> addRating(@RequestBody String userRating) throws JsonProcessingException{
         Rating rating = mapper.readValue(userRating,Rating.class);
         String userId = rating.getUserId();
         if (!users.containsKey(userId)) return new ResponseEntity<>("Invalid User",HttpStatus.FORBIDDEN);
         ratings.put(userId,rating);
+        ratingRepo.save(new RatingPair(userId,rating));
         return new ResponseEntity<>("Ratings Added",HttpStatus.OK);
     }
 
@@ -306,6 +344,7 @@ public class UserApis {
         else{
             ApprovalWithdrawRequest approvalWithdrawRequest = new ApprovalWithdrawRequest(sUsr,userTransaction);
             pendingWithdrawRequests.put(sUserId,approvalWithdrawRequest);
+            pendingWithdrawlRequestRepo.save(new PendingWithdrawlRequestPair(sUserId,approvalWithdrawRequest));
             return new ResponseEntity<>("request added",HttpStatus.OK);
         }
     }
@@ -331,12 +370,14 @@ public class UserApis {
         if (users.get(sUserId).getAvailBalance() < Integer.parseInt(userTransaction.getTrnAmount())) {
             users.get(sUserId).getTransactions().add(userTransaction);
             pendingWithdrawRequests.remove(sUserId);
+            pendingWithdrawlRequestRepo.delete(pendingWithdrawlRequestRepo.findAll().stream().filter(val -> val.getKey().equalsIgnoreCase(sUserId)).findFirst().get());
             return new ResponseEntity<>("Insuficient", HttpStatus.OK);
         }
         else{
             users.get(sUserId).setAvailBalance(users.get(sUserId).getAvailBalance() - Integer.parseInt(userTransaction.getTrnAmount()));
             users.get(sUserId).getTransactions().add(userTransaction);
             pendingWithdrawRequests.remove(sUserId);
+            pendingWithdrawlRequestRepo.delete(pendingWithdrawlRequestRepo.findAll().stream().filter(val -> val.getKey().equalsIgnoreCase(sUserId)).findFirst().get());
             return new ResponseEntity<>("Success",HttpStatus.OK);
         }
     }

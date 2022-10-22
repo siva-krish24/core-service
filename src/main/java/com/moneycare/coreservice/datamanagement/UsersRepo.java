@@ -1,7 +1,7 @@
 package com.moneycare.coreservice.datamanagement;
 
-import javafx.util.Pair;
+import com.moneycare.coreservice.datamanagement.wrapper.UsersPair;
 import org.springframework.data.mongodb.repository.MongoRepository;
 
-public interface UsersRepo extends MongoRepository<Pair<String, String>,String> {
+public interface UsersRepo extends MongoRepository<UsersPair,String> {
 }

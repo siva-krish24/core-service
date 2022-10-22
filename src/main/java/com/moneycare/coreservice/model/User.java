@@ -11,20 +11,32 @@ public class User {
     private String userName;
     private String password;
 
+    private int termAmount;
+
+    public int getTermAmount() {
+        return termAmount;
+    }
+
+    public void setTermAmount(int termAmount) {
+        this.termAmount = termAmount;
+    }
+
     public String getUserName() {
         return userName;
     }
 
-    public void setUserName(String userName) {
+    public User setUserName(String userName) {
         this.userName = userName;
+        return this;
     }
 
     public String getPassword() {
         return password;
     }
 
-    public void setPassword(String password) {
+    public User setPassword(String password) {
         this.password = password;
+        return this;
     }
 
     private String firstName;
@@ -37,8 +49,9 @@ public class User {
         return team;
     }
 
-    public void setTeam(List<BasicUserEntity> team) {
+    public User setTeam(List<BasicUserEntity> team) {
         this.team = team;
+        return this;
     }
 
     private List<Earning> earnings;
@@ -50,11 +63,17 @@ public class User {
     private String email;
     private String mobileNo;
 
+    public User() {
+    }
+
     public User(BasicUserEntity basicUser){
         this.firstName = basicUser.getFirstName();
         this.lastName = basicUser.getLastName();
         this.email = basicUser.getEmail();
         this.mobileNo = basicUser.getMobileNo();
+        this.earnings = new ArrayList<>();
+        this.team = new ArrayList<>();
+        this.transactions = new ArrayList<>();
     }
      public User(String firstName, String lastName, String email, String mobileNo) {
          this.firstName = firstName;
@@ -71,87 +90,98 @@ public class User {
         return id;
     }
 
-    public void setId(String id) {
+    public User setId(String id) {
         this.id = id;
+        return this;
     }
 
     public String getName() {
         return name;
     }
 
-    public void setName(String name) {
+    public User setName(String name) {
         this.name = name;
+        return this;
     }
 
     public String getFirstName() {
         return firstName;
     }
 
-    public void setFirstName(String firstName) {
+    public User setFirstName(String firstName) {
         this.firstName = firstName;
+        return this;
     }
 
     public String getLastName() {
         return lastName;
     }
 
-    public void setLastName(String lastName) {
+    public User setLastName(String lastName) {
         this.lastName = lastName;
+        return this;
     }
 
     public Map<String, BankAccount> getBankAccounts() {
        return bankAccounts;
     }
 
-    public void setBankAccounts(Map<String, BankAccount> bankAccounts) {
+    public User setBankAccounts(Map<String, BankAccount> bankAccounts) {
         this.bankAccounts = bankAccounts;
+        return this;
     }
 
     public List<Earning> getEarnings() {
         return earnings;
     }
 
-    public void setEarnings(List<Earning> earnings) {
+    public User setEarnings(List<Earning> earnings) {
         this.earnings = earnings;
+        return this;
     }
 
     public int getAvailBalance() {
         return availBalance;
     }
 
-    public void setAvailBalance(int availBalance) {
+    public User setAvailBalance(int availBalance) {
         this.availBalance = availBalance;
+        return this;
     }
 
     public int getTotalEarning() {
         return totalEarning;
     }
 
-    public void setTotalEarning(int totalEarning) {
+    public User setTotalEarning(int totalEarning) {
         this.totalEarning = totalEarning;
+        return this;
     }
 
     public String getEmail() {
         return email;
     }
 
-    public void setEmail(String email) {
+    public User setEmail(String email) {
         this.email = email;
+        return this;
     }
 
     public String getMobileNo() {
         return mobileNo;
     }
 
-    public void setMobileNo(String mobileNo) {
+    public User setMobileNo(String mobileNo) {
         this.mobileNo = mobileNo;
+        return this;
     }
 
     public List<Transaction> getTransactions() {
         return transactions;
     }
 
-    public void setTransactions(List<Transaction> transactions) {
+    public User setTransactions(List<Transaction> transactions) {
         this.transactions = transactions;
+        return this;
     }
 }
